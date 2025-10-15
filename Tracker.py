@@ -1,0 +1,160 @@
+import datetime
+import sys
+
+# =================================================================
+# Student Name: Piyush Saini
+# Date: October 11, 2025
+# Project Title: Daily Calorie Tracker CLI
+# Course: Programming for Problem Solving using Python (ETCCPP102)
+# =================================================================
+
+def get_valid_input(prompt, data_type, min_value=None):
+    """
+    Handles input and type conversion, implementing basic input validation.
+    """
+    while True:
+        try:
+            user_input = input(prompt).strip()
+            if data_type == int:
+                value = int(user_input)
+            elif data_type == float:
+                value = float(user_input)
+            else: # String input, just check if it's empty
+                if not user_input:
+                    print("Input cannot be empty. Please try again.")
+                    continue
+                return user_input
+
+            # Check for non-negative values if a minimum is specified
+            if min_value is not None and value < min_value:
+                print(f"Value must be at least {min_value}. Please enter a valid number.")
+            else:
+                return value
+        except ValueError:
+            print("Invalid input. Please enter a valid number.")
+        except EOFError:
+            # Handle user pressing Ctrl+D or equivalent
+            print("\nInput session cancelled.")
+            sys.exit(0)
+
+
+def run_tracker():
+    """Main function to run the Calorie Tracker CLI application."""
+
+    print("\n" + "="*50)
+    print("      Welcome to Daily Calorie Tracker CLI!      ")
+    print("This tool helps you log your meals, track total calories,")
+    print("compare against your daily limit, and save a session report.")
+    print("="*50 + "\n")
+
+    meal_names = []
+    meal_calories = []
+
+    # Get the number of meals (Task 2)
+    # Ensure num_meals is a positive integer
+    num_meals = get_valid_input(
+        "How many meals do you want to enter? (e.g., 3): ", 
+        int, 
+        min_value=1
+    )
+
+    # Loop for meal input (Task 2)
+    print("\n--- Enter Meal Details ---")
+    for i in range(1, num_meals + 1):
+        print(f"\n[Meal {i}/{num_meals}]")
+        
+        # Get meal name (Task 2)
+        name = get_valid_input(f"Enter name for Meal {i} (e.g., Breakfast): ", str)
+        
+        # Get calorie amount (Task 2) - ensure it's a non-negative float
+        calories = get_valid_input(
+            f"Enter calories for {name} (e.g., 450.5): ", 
+            float, 
+            min_value=0
+        )
+        
+        meal_names.append(name)
+        meal_calories.append(calories)
+
+    # --- Calorie Calculations (Task 3) ---
+    total_calories = sum(meal_calories)
+    # num_meals is guaranteed to be > 0 due to validation
+    average_calories = total_calories / num_meals 
+
+    # Get Daily Limit (Task 3)
+    daily_limit = get_valid_input(
+        "\n--- Daily Goal ---\nEnter your daily calorie limit (e.g., 2000): ", 
+        float, 
+        min_value=1
+    )
+
+    # --- Neatly Formatted Output (Task 5) ---
+    print("\n" + "="*50)
+    print("         D A I L Y   C A L O R I E   R E P O R T        ")
+    print("="*50)
+    
+    # Print the summary table header using tabs for alignment
+    print(f"\n{'MEAL NAME':<20}\t{'CALORIES (kCal)':>15}")
+    print(f"{'-'*20}\t{'-'*15}")
+
+    # Print individual meal entries
+    report_lines = []
+    for name, cal in zip(meal_names, meal_calories):
+        # Use f-strings for alignment and formatting to two decimal places
+        line = f"{name:<20}\t{cal:>15.2f}"
+        print(line)
+        report_lines.append(line)
+
+    print(f"{'-'*20}\t{'-'*15}")
+    print(f"{'TOTAL:':<20}\t{total_calories:>15.2f}")
+    print(f"{'AVERAGE:':<20}\t{average_calories:>15.2f}")
+    print(f"{'DAILY LIMIT:':<20}\t{daily_limit:>15.2f}\n")
+
+
+    # --- Exceed Limit Warning System (Task 4) ---
+    if total_calories > daily_limit:
+        excess = total_calories - daily_limit
+        status_message = f"🚨 WARNING: You have exceeded your daily limit by {excess:.2f} kCal!"
+    else:
+        remaining = daily_limit - total_calories
+        status_message = f"✅ SUCCESS: You are within your daily limit. Remaining: {remaining:.2f} kCal."
+
+    print(status_message)
+    print("="*50 + "\n")
+
+    # --- Save Session Log to File (Task 6 - Bonus) ---
+    save = input("Do you want to save this report to 'calorie_log.txt'? (yes/no): ").strip().lower()
+
+    if save == "yes":
+        timestamp = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        
+        # Use 'a' for append mode, so previous logs are kept.
+        try:
+            with open("calorie_log.txt", "a") as file:
+                file.write("\n" + "="*60 + "\n")
+                file.write(f"SESSION LOG - Run Date: {timestamp}\n")
+                file.write("="*60 + "\n")
+                
+                # Write the meal table structure
+                file.write(f"{'MEAL NAME':<20}  {'CALORIES (kCal)':>15}\n")
+                file.write(f"{'-'*20}  {'-'*15}\n")
+                for line in report_lines:
+                    # Write the meals from the list we saved earlier
+                    file.write(line.replace('\t', '  ') + '\n') 
+                
+                file.write(f"{'-'*20}  {'-'*15}\n")
+                file.write(f"{'TOTAL:':<20}  {total_calories:>15.2f}\n")
+                file.write(f"{'AVERAGE:':<20}  {average_calories:>15.2f}\n")
+                file.write(f"{'DAILY LIMIT:':<20}  {daily_limit:>15.2f}\n\n")
+                
+                file.write(f"STATUS: {status_message}\n")
+                file.write("="*60 + "\n")
+            print("Report successfully saved to calorie_log.txt.")
+        except Exception as e:
+            print(f"An error occurred while saving the file: {e}")
+    else:
+        print("Report not saved. Exiting program.")
+
+if __name__ == "__main__":
+    run_tracker()
+
